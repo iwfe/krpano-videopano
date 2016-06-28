@@ -1,0 +1,35 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>krpano</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+    <meta http-equiv="x-ua-compatible" content="IE=edge" />
+    
+</head>
+<body>
+
+<script src="krpano.js"></script>
+
+<div id="pano" style="width:640px;height:480px;"></div>
+
+<script>
+    function log(text){
+        console.log(text)
+    }
+
+    embedpano({
+        swf:"player.swf",
+        xml:"videopano.xml", 
+        target:"pano", 
+        html5:"auto", 
+        passQueryParameters:true, 
+        onready:function(krpano){
+            console.log(krpano);
+        }
+    });
+</script>
+</body>
+</html>

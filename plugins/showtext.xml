@@ -1,0 +1,209 @@
+<krpano>
+	<!--
+		showtext() xml plugin
+		- showtext() and <textstyle> support for HTML5
+		- extended <textstyle> functionality compared to the build-in showtext() action
+		- just include this xml file via: <include url="showtext.xml" />
+		- docu: http://krpano.com/plugins/showtext/
+		- krpano 1.18
+	-->
+
+
+	<!-- predefine a DEFAULT textstyle element -->
+	<textstyle name="DEFAULT" />
+
+
+	<!-- the automatic running (autorun=preinit) install action -->
+	<action name="showtext_install" autorun="preinit">
+		<!-- redirect the build-in 'showtext' action to the 'showtext_xml' action: -->
+		set(showtext, action(showtext_xml,'%%1','%%2') );
+
+		<!-- initialize internal variables -->
+		set(showtext_style, DEFAULT);
+		set(showtext_prevstyle, null);
+		set(showtext_text, '');
+		set(showtext_prevtext, '');
+		set(showtext_timeout, 0.1);
+		set(showtext_fadeout, 0.0);
+		set(showtext_clipping, false);
+	</action>
+	
+
+	<action name="showtext_xml">
+		set(showtext_style, DEFAULT);
+		if('%2' != 'null', ifnot(textstyle['%2'], trace('textstyle "%2" not found'); , set(showtext_style,'%2')); );
+
+		set(showtext_text, '%1');
+		if(showtext_text != showtext_prevtext,
+			copy(showtext_prevtext, showtext_text);
+			showtext_createnewtext();
+		  ,
+			delayedcall(showtext_timer, get(showtext_timeout), showtext_hide() );
+		  );
+	</action>
+
+
+	<action name="showtext_createnewtext">
+		<!-- stop running mouse and alpha update calls -->
+		stopdelayedcall(showtext_mouseupdates);
+		stoptween(layer[showtext_tf].alpha);
+
+		<!-- remove the old textfield when the style has changed -->
+		if(showtext_style != showtext_prevstyle,
+			copy(showtext_prevstyle, showtext_style);
+			removelayer(showtext_tf);
+		  );
+
+		<!-- create a new textfield plugin layer -->
+		addlayer(showtext_tf);
+
+		<!-- create 'shortcut' variables (tf,ts) for faster access -->
+		copy(tf, layer[showtext_tf]);
+		copy(ts, textstyle[get(showtext_style)]);
+
+		<!-- get the position settings -->
+		if(ts.origin  !== null, copy(ts_origin,  ts.origin),  set(ts_origin, 'cursor'));
+		if(ts.edge    !== null, copy(ts_edge,    ts.edge),    set(ts_edge, 'bottom'));
+		if(ts.xoffset !== null, copy(ts_xoffset, ts.xoffset), set(ts_xoffset, 0));
+		if(ts.yoffset !== null, copy(ts_yoffset, ts.yoffset), set(ts_yoffset, -3));
+
+		<!-- set the position settings -->
+		if(ts_origin == 'cursor',
+			set(tf.align, 'lefttop');
+			showtext_movetomouse();
+		  ,
+			copy(tf.align, ts_origin);
+		  );
+		copy(tf.edge, ts_edge);
+		copy(tf.ox, ts_xoffset);
+		copy(tf.oy, ts_yoffset);
+
+		<!-- get the font settings -->
+		if(ts.font      !== null, copy(ts_font,      ts.font),      set(ts_font, 'Times'));
+		if(ts.fontsize  !== null, copy(ts_fontsize,  ts.fontsize),  set(ts_fontsize, 12.0));
+		if(ts.bold      !== null, copy(ts_bold,      ts.bold),      set(ts_bold, true));
+		if(ts.italic    !== null, copy(ts_italic,    ts.italic),    set(ts_italic, false));
+		if(ts.textcolor !== null, copy(ts_textcolor, ts.textcolor), set(ts_textcolor, 0x000000));
+		if(ts.textalign !== null, copy(ts_textalign, ts.textalign), set(ts_textalign, 'left'));
+
+		<!-- use the font settings to build the CSS style -->
+		set(tf_css, '');
+		tohex(ts_textcolor, '#', 6);
+		txtadd(tf_css, 'font-family:',get(ts_font),'; font-size:',get(ts_fontsize),'px; color:',get(ts_textcolor),'; ');
+		if(ts_textalign != 'none', txtadd(tf_css, get(tf_css), 'text-align:',get(ts_textalign),'; '));
+		if(ts_bold,   txtadd(tf_css, 'font-weight:bold; '));
+		if(ts_italic, txtadd(tf_css, 'font-style:italic; '));
+		if(ts.css !== null, txtadd(tf_css, get(ts.css)));
+		copy(tf.css, tf_css);
+
+		<!-- size settings -->
+		if(ts.width   !== null, copy(tf.width,   ts.width));
+		if(ts.height  !== null, copy(tf.height,  ts.height));
+		if(ts.vcenter !== null, copy(tf.vcenter, ts.vcenter));
+		if(ts.padding !== null, copy(tf.padding, ts.padding), set(tf.padding,1));
+
+		<!-- background, border, shadow settings -->
+		if(ts.background      !== null, copy(tf.background,      ts.background));
+		if(ts.backgroundcolor !== null, copy(tf.backgroundcolor, ts.backgroundcolor));
+		if(ts.backgroundalpha !== null, copy(tf.backgroundalpha, ts.backgroundalpha));
+		if(ts.border          !== null, copy(tf.border,          ts.border), set(tf.border,true));
+		if(ts.bordercolor     !== null, copy(tf.bordercolor,     ts.bordercolor));
+		if(ts.borderalpha     !== null, copy(tf.borderalpha,     ts.borderalpha));
+		if(ts.borderwidth     !== null, copy(tf.borderwidth,     ts.borderwidth));
+		if(ts.roundedge       !== null, copy(tf.roundedge,       ts.roundedge));
+		if(ts.shadow          !== null, copy(tf.shadow,          ts.shadow));
+		if(ts.shadowrange     !== null, copy(tf.shadowrange,     ts.shadowrange));
+		if(ts.shadowangle     !== null, copy(tf.shadowangle,     ts.shadowangle));
+		if(ts.shadowcolor     !== null, copy(tf.shadowcolor,     ts.shadowcolor));
+		if(ts.shadowalpha     !== null, copy(tf.shadowalpha,     ts.shadowalpha));
+		if(ts.textshadow      !== null, copy(tf.textshadow,      ts.textshadow));
+		if(ts.textshadowrange !== null, copy(tf.textshadowrange, ts.textshadowrange));
+		if(ts.textshadowangle !== null, copy(tf.textshadowangle, ts.textshadowangle));
+		if(ts.textshadowcolor !== null, copy(tf.textshadowcolor, ts.textshadowcolor));
+		if(ts.textshadowalpha !== null, copy(tf.textshadowalpha, ts.textshadowalpha));
+
+		<!-- showing settings -->
+		if(ts.alpha      !== null, copy(ts_alpha,      ts.alpha),      set(ts_alpha, 1.0));
+		if(ts.showtime   !== null, copy(ts_showtime,   ts.showtime),   set(ts_showtime, 0.1));
+		if(ts.fadetime   !== null, copy(ts_fadetime,   ts.fadetime),   set(ts_fadetime, 0.0));
+		if(ts.fadeintime !== null, copy(ts_fadeintime, ts.fadeintime), set(ts_fadeintime, 0.0));
+		copy(showtext_timeout, ts_showtime);
+		copy(showtext_fadeout, ts_fadetime);
+		if(ts_fadeintime GT 0,
+			set(tf.alpha, 0.0);
+			tween(layer[showtext_tf].alpha, get(ts_alpha), get(ts_fadeintime), linear);
+		  ,
+			copy(tf.alpha, ts_alpha);
+		  );
+
+		if(ts.noclip !== null, copy(showtext_clipping,ts.noclip), set(showtext_clipping, true));
+		
+		if(showtext_clipping,
+			set(tf.onloaded,    showtext_do_clipping() );
+			set(tf.onautosized, showtext_do_clipping() );
+		  );
+
+		<!-- special flash-only settings -->
+		if(ts.embeddedfonts !== null, copy(tf.embeddedfonts, ts.embeddedfonts));
+		if(ts.effect        !== null, copy(tf.effect,        ts.effect));
+		if(ts.blendmode     !== null, copy(tf.blendmode,     ts.blendmode));
+
+		<!-- set the text and the basic settings to start showing the textfield -->
+		copy(tf.html, showtext_text);
+		set(tf.enabled, false);
+		set(tf.zorder, 999999);
+		if(ts.parent, copy(tf.parent, ts.parent) );
+		set(tf.url, '%SWFPATH%/plugins/textfield.swf');
+		
+		<!-- remove the shortcut variables -->
+		delete(ts);
+		delete(tf);
+
+		<!-- start the text-hiding timer -->
+		delayedcall(showtext_timer, get(showtext_timeout), showtext_hide() );
+	</action>
+
+
+	<action name="showtext_do_clipping">
+		if(showtext_clipping,
+			layer[showtext_tf].updatepos();
+			copy(tf_px, layer[showtext_tf].pixelx);
+			copy(tf_py, layer[showtext_tf].pixely);
+			if(tf_px LT 0,
+				sub(layer[showtext_tf].x, tf_px);
+			  ,
+				add(tf_rightedge, tf_px, layer[showtext_tf].pixelwidth);
+				if(tf_rightedge GE stagewidth, sub(tf_rightedge,stagewidth); sub(layer[showtext_tf].x,tf_rightedge); );
+			  );
+			if(tf_py LT 0,
+				sub(layer[showtext_tf].y,  tf_py);
+			  ,
+				add(tf_bottomedge, tf_py, layer[showtext_tf].pixelheight);
+				if(tf_bottomedge GE stageheight, sub(tf_bottomedge,stageheight); sub(layer[showtext_tf].y,tf_bottomedge); );
+			  );
+		  );
+	</action>
+
+
+	<action name="showtext_movetomouse">
+		copy(layer[showtext_tf].x, mouse.stagex);
+		copy(layer[showtext_tf].y, mouse.stagey);
+
+		showtext_do_clipping();
+
+		delayedcall(showtext_mouseupdates, 0, showtext_movetomouse() );
+	</action>
+
+
+	<action name="showtext_hide">
+		if(layer[showtext_tf],
+			tween(layer[showtext_tf].alpha, 0.0, get(showtext_fadeout), linear,
+					stopdelayedcall(showtext_mouseupdates);
+					removelayer(showtext_tf);
+					set(showtext_text, '');
+					set(showtext_prevtext, '');
+				);
+		  );
+	</action>
+
+</krpano>

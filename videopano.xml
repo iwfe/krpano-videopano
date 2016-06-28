@@ -1,0 +1,43 @@
+﻿<krpano>
+
+	<action name="startup" autorun="onstart">
+		
+		if(device.panovideosupport == false,
+			error('Sorry, but panoramic videos are not supported by your current browser!');
+		  ,
+			loadscene(videopano);
+		);
+	</action>
+
+	<scene name="videopano" title="krpano Video">
+
+		<!-- 引入video插件 -->
+		<plugin name="video"
+		        url.html5="%SWFPATH%/videoplayer.js"
+		        url.flash="%SWFPATH%/videoplayer.swf"
+		        pausedonstart="true"
+		        loop="false"
+		        volume="1.0"
+		        onloaded="add_video_sources();"
+		    />
+
+		<!-- 引入皮肤 -->
+		<include url="skin/videointerface.xml" />
+
+		<!-- 定义视频未播放时的画面，这里使用视频截图 -->
+		<image>
+			<sphere url="plugin:video" />
+		</image>
+
+		<!-- 定义视频源 -->
+		<action name="add_video_sources">
+			videointerface_addsource('超清', '%CURRENTXML%/2160x1080@8m.mp4', '');
+			videointerface_addsource('高清', '%CURRENTXML%/1440x720@8m.mp4', '');
+			videointerface_addsource('流畅', '%CURRENTXML%/1440x720@2m.mp4', '');
+			
+			videointerface_play('高清');
+		</action>
+
+	</scene>
+
+</krpano>
